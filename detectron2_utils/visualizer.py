@@ -10,11 +10,15 @@ import matplotlib.colors as mplc
 import matplotlib.figure as mplfigure
 import pycocotools.mask as mask_util
 import torch
+import json
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from detectron2.structures import BitMasks, Boxes, BoxMode, Keypoints, PolygonMasks, RotatedBoxes
 
 from .colormap import random_color
+
+
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -135,9 +139,6 @@ class GenericMask:
         bbox = mask_util.toBbox(p)
         bbox[2] += bbox[0]
         bbox[3] += bbox[1]
-        
-        #print(bbox)
-        #print(self.polygons)
         return bbox
 
 
@@ -322,7 +323,7 @@ class Visualizer:
         )
         self._instance_mode = instance_mode
 
-    def draw_instance_predictions(self, predictions):
+    def draw_instance_predictions(self, predictions, filename):
         """
         Draw instance-level prediction results on an image.
 
@@ -342,7 +343,6 @@ class Visualizer:
 
         if predictions.has("pred_masks"):
             masks = np.asarray(predictions.pred_masks)
-            #print(masks)
             masks = [GenericMask(x, self.output.height, self.output.width) for x in masks]
         else:
             masks = None
@@ -368,21 +368,32 @@ class Visualizer:
         #masks = masks * 255
         #masks = cv2.cvtColor(cv2.cvtColor(masks,cv2.COLOR_BAYER_GB2GRAY),cv2.COLOR_GRAY2BGR)
         #self.output.img = masks
+        # print(keypoints)
+        # print(labels)
+
+        # print('boxes',boxes)
+        # print(classes)
+        # flag_person = 0
+        # for i in labels:
+        #     if(i[0:6] == 'person'):
+        #         flag_person = 1
+        # if(flag_person == 1):
+        #     print("has person!")
+
+
         
-        print(labels)
-        print(boxes)
-        print(scores)
-        print(classes)
-        print(keypoints)    
-        print(masks[0]._mask)
-        np.savetxt("masks0.txt", masks[0]._mask, fmt='%d')
-        
-        #flag_person = 0
-        #for i in labels:
-            #if(i[0:6] == 'person'):
-                #flag_person = 1
-        #if(flag_person == 1):
-            #print("has person!")
+        for i in range(0, len(labels)):
+            if(labels[i][0:6] == 'person'):
+                mask_person = masks[i]._mask
+            
+        img_file = cv2.imread(filename)
+        for i in range(0, mask_person.shape[0]):
+            for j in range(0, mask_person.shape[1]):
+                if(mask_person[i][j] == 0):
+                    #print(0)
+                    img_file[i][j][0] = img_file[i][j][1] = img_file[i][j][2] = 255
+        # img_file_n = cv2.resize(img_file, (299, 299))
+        cv2.imwrite(filename, img_file)    
         
         self.overlay_instances(
             masks=masks,
@@ -391,7 +402,11 @@ class Visualizer:
             keypoints=keypoints,
             assigned_colors=colors,
             alpha=alpha,
+            file_crop=filename
         )
+
+
+   
             
         #cv2.imshow('mask',masks)
         #ROI = cv2.bitwise_and(masks, img)
@@ -542,7 +557,8 @@ class Visualizer:
         masks=None,
         keypoints=None,
         assigned_colors=None,
-        alpha=0.5
+        alpha=0.5,
+        file_crop
     ):
         """
         Args:
@@ -602,7 +618,8 @@ class Visualizer:
         # Display in largest to smallest order to reduce occlusion.
         areas = None
         if boxes is not None:
-            areas = np.prod(boxes[:, 2:] - boxes[:, :2], axis=1)
+            areas = np.prod(boxes[:, 2:] - boxes[:, :2], axis=1)   #连乘
+
         elif masks is not None:
             areas = np.asarray([x.area() for x in masks])
 
@@ -627,6 +644,23 @@ class Visualizer:
             if labels is not None:
                 # first get a box
                 if boxes is not None:
+                    if(labels[i][0:6] == 'person'):           
+                        print(labels[i],boxes[i])
+                        # file_name = 'person.json' #通过扩展名指定文件存储的数据为json格式
+                        # with open(file_name,'w') as file_object:
+                        #     json.dump(boxes[i],file_object)
+                        x0, y0, x1, y1 = boxes[i]
+                        # print(x0, y0, x1, y1)
+                        # img_file = cv2.imread(file_crop)
+                        img_file = Image.open(file_crop)
+                        # img_file = img_file.rotate(270)
+                        img_file = img_file.crop((x0-50,y0,x1+50,y1))
+                        img_file = img_file.resize((299, 299))
+                        img_file.save(file_crop)
+                        # img_file_n = cv2.resize(img_file, (299, 299))
+
+                        # cv2.imwrite(file_crop, img_file)  
+
                     x0, y0, x1, y1 = boxes[i]
                     text_pos = (x0, y0)  # if drawing boxes, put text on the box corner.
                     horiz_align = "left"
@@ -837,7 +871,7 @@ class Visualizer:
         x0, y0, x1, y1 = box_coord
         width = x1 - x0
         height = y1 - y0
-
+        
         linewidth = max(self._default_font_size / 4, 1)
 
         self.output.ax.add_patch(
