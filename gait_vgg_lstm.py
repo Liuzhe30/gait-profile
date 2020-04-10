@@ -24,7 +24,12 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     
     # load data
-    
+    x_train = np.load('gait_dataset/x_train_0.npy') #(165, 50, 299, 299, 3)
+    y_train = np.load('gait_dataset/y_train_0.npy') #(165,)
+    x_valid = np.load('gait_dataset/x_valid_0.npy') #(17, 50, 299, 299, 3)
+    y_valid = np.load('gait_dataset/y_valid_0.npy') #(17,)  
+    x_test = np.load('gait_dataset/x_test_0.npy') #(17, 50, 299, 299, 3)
+    y_test = np.load('gait_dataset/y_test_0.npy') #(17,)  
     
     # build model
     video = Input(shape=(frames, rows, columns, channels))
