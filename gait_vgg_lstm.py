@@ -1,5 +1,6 @@
 import tensorflow as tf
 from keras import layers, models, optimizers
+from gait_generator import DataGenerator
 from keras.utils import to_categorical
 from keras.layers import *
 from keras.models import *
@@ -19,17 +20,51 @@ from keras import backend as K
 K.clear_session()
 K.set_image_data_format('channels_last')
 
+name_dict = {
+'fyc': 0, 'hy': 1, 'ljg': 2, 'lqf': 3, 'lsl': 4,
+'ml': 5, 'nhz': 6, 'rj': 7, 'syj': 8, 'wq': 9,
+'wyc': 10, 'xch': 11, 'xxj': 12, 'yjf': 13, 'zdx': 14,
+'zjg': 15, 'zyf': 16
+}
+
+path = '/home/liuz/detectron2/gait_dataset/'
+
 if __name__ == "__main__":
     
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "7"
     
-    # load data
-    x_train = np.load('gait_dataset/x_train_0.npy') #(165, 50, 299, 299, 3)
-    y_train = np.load('gait_dataset/y_train_0.npy') #(165,)
-    x_valid = np.load('gait_dataset/x_valid_0.npy') #(17, 50, 299, 299, 3)
-    y_valid = np.load('gait_dataset/y_valid_0.npy') #(17,)  
-    x_test = np.load('gait_dataset/x_test_0.npy') #(17, 50, 299, 299, 3)
-    y_test = np.load('gait_dataset/y_test_0.npy') #(17,)  
+    parser = argparse.ArgumentParser(description="model stucture.")
+    parser.add_argument('--epochs', default=10, type=int)
+    parser.add_argument('--batch_size', default=50, type=int)
+    parser.add_argument('--debug', action='store_true',
+                        help="Save weights by TensorBoard")
+    parser.add_argument('--save_dir', default='gait_profile')
+    parser.add_argument('-w', '--weights', default=None,
+                        help="The path of the saved weights. Should be specified when testing")
+    parser.add_argument('-t', '--testing', action='store_true',
+                        help="Test the trained model on testing dataset")    
+    args = parser.parse_args()
+    print(args)
+    
+    if not os.path.exists(args.save_dir):
+        os.makedirs(args.save_dir)
+    
+    # parameters
+    params = {'dim': (50,299,299),
+              'batch_size': 50,
+              'n_classes': 17,
+              'n_channels': 3,
+              'shuffle': True}    
+
+    # datasets
+    partition = # IDs
+    labels = # Labels    
+
+    # generators
+    training_generator = DataGenerator(partition['train'], labels, **params)
+    validation_generator = DataGenerator(partition['validation'], labels, **params)    
+
+    frames, rows, columns, channels = 50, 299, 299, 3
     
     # build model
     video = Input(shape=(frames, rows, columns, channels))
@@ -42,7 +77,21 @@ if __name__ == "__main__":
     hidden_layer = Dense(output_dim=1024, activation="relu")(encoded_sequence)
     outputs = Dense(output_dim=classes, activation="softmax")(hidden_layer)
     model = Model([video], outputs)
+    model.summary()
     
     # train
     optimizer = Nadam(lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004)
     model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=["categorical_accuracy"])
+    
+    # callbacks
+    log = callbacks.CSVLogger(args.save_dir + '/log.csv')
+    tb = callbacks.TensorBoard(log_dir=args.save_dir + '/tensorboard-logs',
+                               batch_size=args.batch_size, histogram_freq=int(args.debug))
+    #EarlyStopping = callbacks.EarlyStopping(monitor='val_cc2', min_delta=0.01, patience=5, verbose=0, mode='max', baseline=None, restore_best_weights=True)
+    checkpoint = callbacks.ModelCheckpoint(args.save_dir + '/weights-{epoch:02d}.h5', monitor='val_categorical_accuracy', mode='max',
+                                           save_best_only=True, save_weights_only=True, verbose=1)
+    #lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))    
+    #model.fit(x_train, y_train, batch_size=args.batch_size, epochs=args.epochs, verbose=1, callbacks=[log, tb, checkpoint], validation_data=(x_valid, y_valid))
+    
+    model.save_weights(args.save_dir + '/trained_model.h5')
+    print('Trained model saved to \'%s/trained_model.h5\'' % args.save_dir)    

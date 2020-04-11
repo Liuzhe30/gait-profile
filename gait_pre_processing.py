@@ -18,8 +18,8 @@ def findAllFile(base):
             yield fullname
 
 def create_testset(angle):
-    x_test = []
-    y_test = []
+    #x_test = []
+    #y_test = []
     for name in name_dict.keys():
         single_video = []
         full_path = path + angle + '_bbox+mask/test/' + name + '/00_3/'
@@ -31,19 +31,21 @@ def create_testset(angle):
             #print(img_array.shape) #(299,299,3)
             single_video.append(img_array)
         
-        x_test.append(single_video)
-        y_test.append(label)
+        save_video = np.array(single_video)
+        np.save('gait_dataset/test_data/' + name + '.npy', save_video)
+        #x_test.append(single_video)
+        #y_test.append(label)
         
-    x_test = np.array(x_test) 
-    y_test = np.array(y_test) 
+    #x_test = np.array(x_test) 
+    #y_test = np.array(y_test) 
     #print(x_test.shape) #(17, 50, 299, 299, 3)
     #print(y_test.shape) #(17,)
-    np.save('gait_dataset/x_test_' + angle + '.npy',x_test)
-    np.save('gait_dataset/y_test_' + angle + '.npy',y_test)
+    #np.save('gait_dataset/x_test_' + angle + '.npy',x_test)
+    #np.save('gait_dataset/y_test_' + angle + '.npy',y_test)
     
 def create_validset(angle):
-    x_test = []
-    y_test = []
+    #x_test = []
+    #y_test = []
     for name in name_dict.keys():
         single_video = []
         full_path = path + angle + '_bbox+mask/val/' + name + '/00_4/'
@@ -54,26 +56,28 @@ def create_validset(angle):
             img_array = np.asarray(img)    
             single_video.append(img_array)
         
-        x_test.append(single_video)
-        y_test.append(label)
+        save_video = np.array(single_video)
+        np.save('gait_dataset/valid_data/' + name + '.npy', save_video)
+        #x_test.append(single_video)
+        #y_test.append(label)
         
-    x_test = np.array(x_test) 
-    y_test = np.array(y_test) 
+    #x_test = np.array(x_test) 
+    #y_test = np.array(y_test) 
     #print(x_test.shape) #(17, 50, 299, 299, 3)
     #print(y_test.shape) #(17,)    
-    np.save('gait_dataset/x_valid_' + angle + '.npy',x_test)
-    np.save('gait_dataset/y_valid_' + angle + '.npy',y_test)
+    #np.save('gait_dataset/x_valid_' + angle + '.npy',x_test)
+    #np.save('gait_dataset/y_valid_' + angle + '.npy',y_test)
     
 def create_trainset(angle):
-    x_test = []
-    y_test = []
+    #x_test = []
+    #y_test = []
     
     full_path_list = [['brightness1_','/00_1/'],['brightness1_','/00_2/'],
                       ['brightness2_','/00_1/'],['brightness2_','/00_2/'],
                       ['','/00_1/'],['','/00_2/'],
                       ['hue_','/00_1/'],['hue_','/00_2/'],
                       ['left_right_','/00_1/'],['left_right_','/00_2/']]
-    
+    count = 0
     for idx in range(0,10):
         for name in name_dict.keys():
             single_video = []
@@ -87,16 +91,19 @@ def create_trainset(angle):
                     img_array = np.asarray(img)    
                     single_video.append(img_array)
                 
-                x_test.append(single_video)
-                y_test.append(label)
+                save_video = np.array(single_video)
+                np.save('gait_dataset/train_data/' + name + '_' + str(count) + '.npy', save_video)
+                count += 1
+                #x_test.append(single_video)
+                #y_test.append(label)
                 #print(np.array(x_test).shape) 
       
-    x_test = np.array(x_test) 
-    y_test = np.array(y_test) 
+    #x_test = np.array(x_test) 
+    #y_test = np.array(y_test) 
     #print(x_test.shape) #(165, 50, 299, 299, 3)
     #print(y_test.shape) #(165,)
-    np.save('gait_dataset/x_train_' + angle + '.npy',x_test)
-    np.save('gait_dataset/y_train_' + angle + '.npy',y_test)
+    #np.save('gait_dataset/x_train_' + angle + '.npy',x_test)
+    #np.save('gait_dataset/y_train_' + angle + '.npy',y_test)
     
 if __name__ == "__main__":
     
