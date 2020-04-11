@@ -1,6 +1,7 @@
 import tensorflow as tf
 from keras import layers, models, optimizers
 from gait_generator import DataGenerator
+from gait_json import create_json
 from keras.utils import to_categorical
 from keras.layers import *
 from keras.models import *
@@ -20,22 +21,15 @@ from keras import backend as K
 K.clear_session()
 K.set_image_data_format('channels_last')
 
-name_dict = {
-'fyc': 0, 'hy': 1, 'ljg': 2, 'lqf': 3, 'lsl': 4,
-'ml': 5, 'nhz': 6, 'rj': 7, 'syj': 8, 'wq': 9,
-'wyc': 10, 'xch': 11, 'xxj': 12, 'yjf': 13, 'zdx': 14,
-'zjg': 15, 'zyf': 16
-}
-
 path = '/home/liuz/detectron2/gait_dataset/'
 
 if __name__ == "__main__":
     
-    os.environ["CUDA_VISIBLE_DEVICES"] = "7"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
     
     parser = argparse.ArgumentParser(description="model stucture.")
     parser.add_argument('--epochs', default=10, type=int)
-    parser.add_argument('--batch_size', default=50, type=int)
+    parser.add_argument('--batch_size', default=1, type=int)
     parser.add_argument('--debug', action='store_true',
                         help="Save weights by TensorBoard")
     parser.add_argument('--save_dir', default='gait_profile')
@@ -51,20 +45,21 @@ if __name__ == "__main__":
     
     # parameters
     params = {'dim': (50,299,299),
-              'batch_size': 50,
+              'batch_size': 1,
               'n_classes': 17,
               'n_channels': 3,
-              'shuffle': True}    
+              'shuffle': True}   
 
     # datasets
-    partition = # IDs
-    labels = # Labels    
+    partition, labels = create_json()
+    #print(labels)
 
     # generators
-    training_generator = DataGenerator(partition['train'], labels, **params)
-    validation_generator = DataGenerator(partition['validation'], labels, **params)    
+    training_generator = DataGenerator(list_IDs = partition['train'], labels = labels, **params)
+    validation_generator = DataGenerator(list_IDs = partition['validation'], labels = labels, **params)    
 
     frames, rows, columns, channels = 50, 299, 299, 3
+    classes = 17
     
     # build model
     video = Input(shape=(frames, rows, columns, channels))
@@ -92,6 +87,10 @@ if __name__ == "__main__":
                                            save_best_only=True, save_weights_only=True, verbose=1)
     #lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))    
     #model.fit(x_train, y_train, batch_size=args.batch_size, epochs=args.epochs, verbose=1, callbacks=[log, tb, checkpoint], validation_data=(x_valid, y_valid))
+    model.fit_generator(generator=training_generator,
+                        validation_data=validation_generator,
+                        use_multiprocessing=True,steps_per_epoch=100,validation_steps=100,
+                        epochs=args.epochs, verbose=1)  
     
     model.save_weights(args.save_dir + '/trained_model.h5')
     print('Trained model saved to \'%s/trained_model.h5\'' % args.save_dir)    

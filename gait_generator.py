@@ -51,7 +51,7 @@ class DataGenerator(keras.utils.Sequence):
         # Generate data
         for i, ID in enumerate(list_IDs_temp):
             # Store sample
-            X[i,] = np.load('data/' + ID + '.npy')
+            X[i,] = np.load('/home/liuz/detectron2/gait_dataset/' + ID + '.npy')
 
             # Store class
             y[i] = self.labels[ID]

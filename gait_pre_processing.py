@@ -27,12 +27,14 @@ def create_testset(angle):
         
         for img_name in findAllFile(full_path):
             img = Image.open(img_name)
+            #img = img.convert('1')  # image binaryzation
             img_array = np.asarray(img)    
             #print(img_array.shape) #(299,299,3)
             single_video.append(img_array)
         
         save_video = np.array(single_video)
-        np.save('gait_dataset/test_data/' + name + '.npy', save_video)
+        #save_video = save_video.reshape(save_video.shape[0], save_video.shape[1], save_video.shape[2], 1)
+        np.save('gait_dataset/test_data/' + name + '_test.npy', save_video)
         #x_test.append(single_video)
         #y_test.append(label)
         
@@ -53,11 +55,12 @@ def create_validset(angle):
         
         for img_name in findAllFile(full_path):
             img = Image.open(img_name)
-            img_array = np.asarray(img)    
+            #img = img.convert('1') 
+            img_array = np.asarray(img)
             single_video.append(img_array)
         
         save_video = np.array(single_video)
-        np.save('gait_dataset/valid_data/' + name + '.npy', save_video)
+        np.save('gait_dataset/valid_data/' + name + '_valid.npy', save_video)
         #x_test.append(single_video)
         #y_test.append(label)
         
@@ -71,14 +74,14 @@ def create_validset(angle):
 def create_trainset(angle):
     #x_test = []
     #y_test = []
-    
+    count = 0
     full_path_list = [['brightness1_','/00_1/'],['brightness1_','/00_2/'],
                       ['brightness2_','/00_1/'],['brightness2_','/00_2/'],
                       ['','/00_1/'],['','/00_2/'],
                       ['hue_','/00_1/'],['hue_','/00_2/'],
                       ['left_right_','/00_1/'],['left_right_','/00_2/']]
-    count = 0
     for idx in range(0,10):
+        
         for name in name_dict.keys():
             single_video = []
             full_path = path + angle + '_bbox+mask/train/' + full_path_list[idx][0] + name + full_path_list[idx][1]
@@ -88,6 +91,7 @@ def create_trainset(angle):
         
                 for img_name in findAllFile(full_path):
                     img = Image.open(img_name)
+                    #img = img.convert('1') 
                     img_array = np.asarray(img)    
                     single_video.append(img_array)
                 
