@@ -25,11 +25,15 @@ path = '/home/liuz/detectron2/gait_dataset/'
 
 if __name__ == "__main__":
     
-    os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "7"
     
     parser = argparse.ArgumentParser(description="model stucture.")
     parser.add_argument('--epochs', default=10, type=int)
     parser.add_argument('--batch_size', default=1, type=int)
+    parser.add_argument('--lr', default=0.0001, type=float,
+                        help="Initial learning rate")
+    parser.add_argument('--lr_decay', default=0.05, type=float,
+                        help="The value multiplied by lr at each epoch. Set a larger value for larger epochs")               
     parser.add_argument('--debug', action='store_true',
                         help="Save weights by TensorBoard")
     parser.add_argument('--save_dir', default='gait_profile')
@@ -85,12 +89,15 @@ if __name__ == "__main__":
     #EarlyStopping = callbacks.EarlyStopping(monitor='val_cc2', min_delta=0.01, patience=5, verbose=0, mode='max', baseline=None, restore_best_weights=True)
     checkpoint = callbacks.ModelCheckpoint(args.save_dir + '/weights-{epoch:02d}.h5', monitor='val_categorical_accuracy', mode='max',
                                            save_best_only=True, save_weights_only=True, verbose=1)
-    #lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))    
+    lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))    
     #model.fit(x_train, y_train, batch_size=args.batch_size, epochs=args.epochs, verbose=1, callbacks=[log, tb, checkpoint], validation_data=(x_valid, y_valid))
     model.fit_generator(generator=training_generator,
                         validation_data=validation_generator,
-                        use_multiprocessing=True,steps_per_epoch=100,validation_steps=100,
-                        epochs=args.epochs, verbose=1)  
+                        use_multiprocessing=True,
+                        steps_per_epoch=165, #steps_per_epoch = int(number_of_train_samples / batch_size)
+                        validation_steps=17,  #val_steps = int(number_of_val_samples / batch_size)
+                        epochs=args.epochs, verbose=1,
+                        callbacks=[log, tb, checkpoint, lr_decay])  
     
     model.save_weights(args.save_dir + '/trained_model.h5')
     print('Trained model saved to \'%s/trained_model.h5\'' % args.save_dir)    
