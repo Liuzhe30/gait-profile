@@ -13,7 +13,15 @@ def findAllFile(base):
     for root, ds, fs in os.walk(base):
         for f in fs:
             yield f
-            
+
+def create_testjson():
+    
+    partition['test'] = []
+    full_path = path + 'test_data/'
+    for name in name_dict:
+        partition['test'].append('test_data/' + name + '_test')
+        labels['test_data/' + name + '_test'] = name_dict[name]
+        
 def create_validjson():
     
     partition['validation'] = []
@@ -35,12 +43,14 @@ def create_trainjson():
     #print(labels)
 
 def create_json():
+    create_trainjson()
     create_validjson()
-    create_trainjson() 
+    create_testjson()
     return partition, labels
     
 if __name__ == "__main__":
     
-    create_validjson()
     create_trainjson()
+    create_validjson()
+    create_testjson()
     
