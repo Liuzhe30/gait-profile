@@ -29,7 +29,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="model stucture.")
     parser.add_argument('--epochs', default=10, type=int)
-    parser.add_argument('--batch_size', default=1, type=int)
+    parser.add_argument('--batch_size', default=3, type=int)
     parser.add_argument('--lr', default=0.0001, type=float,
                         help="Initial learning rate")
     parser.add_argument('--lr_decay', default=0.05, type=float,
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     
     # parameters
     params = {'dim': (50,299,299),
-              'batch_size': 1,
+              'batch_size': args.batch_size,
               'n_classes': 17,
               'n_channels': 3,
               'shuffle': True}   
@@ -61,6 +61,7 @@ if __name__ == "__main__":
     # generators
     training_generator = DataGenerator(list_IDs = partition['train'], labels = labels, **params)
     validation_generator = DataGenerator(list_IDs = partition['validation'], labels = labels, **params)    
+    test_generator = DataGenerator(list_IDs = partition['test'], labels = labels, **params)    
 
     frames, rows, columns, channels = 50, 299, 299, 3
     classes = 17
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     model.summary()
     
     # train
-    optimizer = Nadam(lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004)
+    optimizer = Nadam(lr=args.lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004)
     model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=["categorical_accuracy"])
     
     # callbacks
@@ -94,10 +95,16 @@ if __name__ == "__main__":
     model.fit_generator(generator=training_generator,
                         validation_data=validation_generator,
                         use_multiprocessing=True,
-                        steps_per_epoch=165, #steps_per_epoch = int(number_of_train_samples / batch_size)
-                        validation_steps=17,  #val_steps = int(number_of_val_samples / batch_size)
+                        steps_per_epoch=np.ceil(165/args.batch_size), #steps_per_epoch = int(number_of_train_samples / batch_size)
+                        validation_steps=np.ceil(17/args.batch_size),  #val_steps = int(number_of_val_samples / batch_size)
                         epochs=args.epochs, verbose=1,
                         callbacks=[log, tb, checkpoint, lr_decay])  
     
+    # evaluate model
+    print(model.evaluate_generator(generator=test_generator, 
+                       steps=np.ceil(17/args.batch_size), 
+                       max_queue_size=10))
+    
+    # save best model
     model.save_weights(args.save_dir + '/trained_model.h5')
     print('Trained model saved to \'%s/trained_model.h5\'' % args.save_dir)    
